@@ -6,6 +6,7 @@
 
 #include "stub_bin.h"
 #include "firm_0_18000000_bin.h"
+#include "firm_1_1FF96000_bin.h"
 
 u8* bottom_fb = NULL;
 u32 copy_core0stub_and_run_ptr = 0;
@@ -89,12 +90,16 @@ int main(int argc, char **argv)
 	gfxSwapBuffers();
 
 	u32* stub_buffer = (u32*)linearAlloc(0x100000);
-	stub_pa = (u32)osConvertVirtToPhys((u32)stub_buffer);
+	stub_pa = (u32)osConvertVirtToPhys(stub_buffer);
 	memcpy(stub_buffer, stub_bin, stub_bin_size);
 
-	void* firm_0_18000000_buffer = linearAlloc(0x100000);
-	u32 firm_0_18000000_pa = (u32)osConvertVirtToPhys((u32)firm_0_18000000_buffer);
+	void* firm_0_18000000_buffer = linearAlloc(0x200000);
+	u32 firm_0_18000000_pa = (u32)osConvertVirtToPhys(firm_0_18000000_buffer);
 	memcpy(firm_0_18000000_buffer, firm_0_18000000_bin, firm_0_18000000_bin_size);
+
+	void* firm_1_1FF96000_buffer = linearAlloc(0x100000);
+	u32 firm_1_1FF96000_pa = (u32)osConvertVirtToPhys(firm_1_1FF96000_buffer);
+	memcpy(firm_1_1FF96000_buffer, firm_1_1FF96000_bin, firm_1_1FF96000_bin_size);
 
 	// patch stub so it knows where our section is at
 	{
@@ -102,13 +107,29 @@ int main(int argc, char **argv)
 		for(i = 0; i < stub_bin_size / 4; i ++)
 		{
 			u32* ptr = &stub_buffer[i];
-			if(*ptr == 0xdeadbabe)
+			u32 val = *ptr;
+
+			if((val >> 16) == 0xdead)
 			{
-				*ptr = firm_0_18000000_pa;
-				printf("found src %d\n", i);
-			}else if(*ptr == 0x0deaddad){
-				*ptr = firm_0_18000000_bin_size;
-				printf("found len %d\n", i);
+				switch(val & 0xff)
+				{
+					case 0:
+						*ptr = firm_0_18000000_pa;
+						printf("found src 1 %d\n", i);
+						break;
+					case 1:
+						*ptr = firm_0_18000000_bin_size;
+						printf("found len 1 %d\n", i);
+						break;
+					case 2:
+						*ptr = firm_1_1FF96000_pa;
+						printf("found src 2 %d\n", i);
+						break;
+					case 3:
+						*ptr = firm_1_1FF96000_bin_size;
+						printf("found len 2 %d\n", i);
+						break;
+				}
 			}
 		}
 	}

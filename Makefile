@@ -120,7 +120,7 @@ endif
 .PHONY: $(BUILD) clean all
 
 #---------------------------------------------------------------------------------
-all: data/firm_0_18000000.bin data/stub.bin $(BUILD)
+all: data/firm_0_18000000.bin data/firm_1_1FF96000.bin data/stub.bin $(BUILD)
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
@@ -136,6 +136,9 @@ data/stub.bin: stub.s
 data/firm_0_18000000.bin: TwlBg/code_mod.s
 	cd TwlBg && make && cd ..
 	cp TwlBg/out.ncch data/firm_0_18000000.bin
+data/firm_1_1FF96000.bin: kernel11/firm_1_1FF96000_mod.s
+	cd kernel11 && make && cd ..
+	cp kernel11/firm_1_1FF96000_mod.bin data/firm_1_1FF96000.bin
 
 #---------------------------------------------------------------------------------
 else
